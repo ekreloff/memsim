@@ -7,12 +7,14 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 //Set to 1 to allow doing multiple simulations
 #define INTERACTIVE 0
 
 //cache constants in bytes
 #define L1BLOCKSIZE 32
+#define L1BUSSIZE 4
 #define L2BLOCKSIZE 64
 #define L2BUSWIDTH 16
 
@@ -28,9 +30,10 @@
 #define MEMREADY 50
 #define MEMCHUNKTIME 20
 
-#define false 0
-#define true 1
-typedef int bool;
+typedef struct node{
+	int data;
+	struct node *child;
+} Node;
 
 
 int main( int argc, const char* argv[] ){
@@ -50,19 +53,17 @@ int main( int argc, const char* argv[] ){
 	
 	//Process config file to change defaults
 	if((config_fp = fopen(argv[argc-1], "r")) != NULL){
-	
-	while(fscanf(config_fp, "%i %i %i %i %i", 
-		  &l1_cache_size, &l1_assoc, &l2_cache_size, &l2_assoc, &mem_chunk_size) == 5){
-		printf("\n%i %i %i %i %i\n", l1_cache_size, l1_assoc, l2_cache_size, l2_assoc, mem_chunk_size);
+		while(fscanf(config_fp, "%i %i %i %i %i", 
+			&l1_cache_size, &l1_assoc, &l2_cache_size, &l2_assoc, &mem_chunk_size) == 5){
+			printf("\n%i %i %i %i %i\n", l1_cache_size, l1_assoc, l2_cache_size, l2_assoc, mem_chunk_size);
 	  }
 	}
 	
-	printf("\n%i %i %i %i %i\n", l1_cache_size, l1_assoc, l2_cache_size, l2_assoc, mem_chunk_size); 
-	return 0;
 	
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
 		printf("\n%c %Lx %d", op, address, bytesize);
 	}
+	return 0;
 	
 	while(input != 'q' && input != 'Q' && INTERACTIVE){
 		
