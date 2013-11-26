@@ -21,25 +21,11 @@ int main( int argc, const char* argv[] ){
 	unsigned long long int address;
 	unsigned int bytesize;
 	
-	//Setting default parameters
-	int l1_block_size = 32;
-	int l1_cache_size = 8192;
-	int l1_assoc = 1;
-	int l1_hit_time = 1;
-	int l1_miss_time = 1;
-	
-	int l2_block_size = 64;
-	int l2_cache_size = 65536;
-	int l2_assoc = 1;
-	int l2_hit_time = 4;
-	int l2_miss_time = 6;
-	int l2_transfer_time = 6;
-	int l2_bus_width = 16;
-	
-	int mem_sendaddr = 10;
-	int mem_ready = 50;
-	int mem_chunktime = 20;
-	int mem_chunksize = 16;
+	//Initialize parameters
+	int l1_block_size, l1_cache_size, l1_assoc, l1_hit_time, 
+		l1_miss_time, l2_block_size, l2_cache_size, l2_assoc, 
+		l2_hit_time, l2_miss_time, l2_transfer_time, l2_bus_width, 
+		mem_sendaddr, mem_ready, mem_chunktime, mem_chunksize;
 	
 	//Process config file to change defaults
 	config_fp = fopen(argv[argc-1], "r");
@@ -49,7 +35,7 @@ int main( int argc, const char* argv[] ){
 		  &l2_block_size, &l2_cache_size, &l2_assoc, &l2_hit_time, &l2_miss_time, &l2_transfer_time, &l2_bus_width,
 		  &mem_sendaddr, &mem_ready, &mem_chunktime, &mem_chunksize) == 16){
 			
-		printf("%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i", 
+		printf("\n%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i\n", 
 		l1_block_size, l1_cache_size, l1_assoc, l1_hit_time, l1_miss_time,
 		l2_block_size, l2_cache_size, l2_assoc, l2_hit_time, l2_miss_time, l2_transfer_time, l2_bus_width,
 		mem_sendaddr, mem_ready, mem_chunktime, mem_chunksize);
