@@ -30,8 +30,14 @@
 #define MEMREADY 50
 #define MEMCHUNKTIME 20
 
+#define true 1
+#define false 2
+typedef int bool;
+
 typedef struct node{
-	int data;
+	unsigned long long int address;
+	bool dirty;
+	bool valid;
 	struct node *child;
 } Node;
 
@@ -59,9 +65,48 @@ int main( int argc, const char* argv[] ){
 	  }
 	}
 	
+	int i;
+	Node *next, *l1_root, *l2_root;
+	l1_root = NULL;
+	l2_root = NULL;
+	
+	for(i = 0; i < l1_cache_size/L1BLOCKSIZE; i++){
+			next = (Node *)malloc(sizeof(Node));
+			next->address = 0;
+			next->dirty = false;
+			next->valid = false;
+			next->child = l1_root;
+			l1_root = next;
+		}
+		
+	for(i = 0; i < l2_cache_size/L2BLOCKSIZE; i++){
+			next = (Node *)malloc(sizeof(Node));
+			next->address = 0;
+			next->dirty = false;
+			next->valid = false;
+			next->child = l2_root;
+			l2_root = next;
+		}
+
+		Node *next1, *next2;
+		next1 = l1_root;
+		next2 = l2_root;
+		i = 0;
+		while(next2 != NULL){
+			i++;
+			//printf("\n%i %i", i, next->address);
+			printf("\n%i %i", i, next2->address);
+			next2 = next2->child; 
+		
+		}
+	
 	
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
 		printf("\n%c %Lx %d", op, address, bytesize);
+		
+		
+		 
+		
 	}
 	return 0;
 	
