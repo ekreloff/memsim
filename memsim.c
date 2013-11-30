@@ -35,11 +35,13 @@
 #define MEMCHUNKTIME 20
 
 #define true 1
-#define false 2
+#define false 0
 typedef int bool;
 
 typedef struct node{
 	unsigned long long int address;
+	unsigned long long int tag;
+	unsigned int block_number;
 	bool dirty;
 	bool valid;
 	struct node *child;
@@ -85,6 +87,8 @@ int main( int argc, const char* argv[] ){
 	for(i = 0; i < l1_cache_size/L1BLOCKSIZE; i++){
 			next = (Node *)malloc(sizeof(Node));
 			next->address = i;
+			next->block_number = l1_cache_size/L1BLOCKSIZE - i - 1; 
+			next->tag = 0;
 			next->dirty = false;
 			next->valid = false;
 			next->child = l1_root;
@@ -94,23 +98,28 @@ int main( int argc, const char* argv[] ){
 	for(i = 0; i < l2_cache_size/L2BLOCKSIZE; i++){
 			next = (Node *)malloc(sizeof(Node));
 			next->address = i;
+			next->block_number = l2_cache_size/L2BLOCKSIZE - i - 1;
+			next->tag = 0;
 			next->dirty = false;
 			next->valid = false;
 			next->child = l2_root;
 			l2_root = next;
 		}
+		
 
 		/*Node *next1, *next2;
 		next1 = l1_root;
 		next2 = l2_root;
 		i = 0;
-		while(next2 != NULL){
+		while(next1 != NULL){
 			i++;
 			//printf("\n%i %i", i, next->address);
-			printf("\n%i %i", i, next2->address);
-			next2 = next2->child; 
+			printf("\n%i %i", i, next1->block_number);
+			next1 = next1->child; 
 		
-		}*/
+		}
+		
+		return 0;*/
 	
 	Node *current1 = l1_root;
 	Node *current2 = l2_root; 
@@ -146,21 +155,34 @@ int main( int argc, const char* argv[] ){
 	
 	
 	
-	
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
+		current1 = l1_root;
+		printf("check%s\n", current1);
 		while(current1 != NULL){
-			if((current1->address && indexmask1) == address && indexmask1){
-				break;
-			}/*else{printf("cache miss\n");}*/
-			
-			
+			//printf("%Li %i\n", address%(l1_cache_size/L1BLOCKSIZE), current1->block_number);
+			if(current1->block_number == address%(l1_cache_size/L1BLOCKSIZE)){
+				if(current1->tag == address && tagmask1){
+					if(current1->valid){
+						printf("Cache Hit\n");
+						if(op == 'W'){
+							current1->dirty = true;
+						}
+					}
+				}
+				printf("Cache Miss\n");
+				if(current1->dirty){
+					printf("need to write to level 2\n");
+				}
+				current1->address = address;
+				current1->tag = address && tagmask1;
+				current1->valid = true;
+				if(op == 'W'){
+					current1->dirty = true;
+				}else{current1->dirty = false;}
+				
+			}
 			current1 = current1->child;
-		}
-		
-		printf("cache hit\n");
-		
-		 
-		
+		} 
 	}
 	return 0;
 	
