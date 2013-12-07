@@ -51,7 +51,7 @@ typedef struct node{
 int main( int argc, const char* argv[] ){
 	
 	FILE *config_fp;
-	int input = ' ';
+	//int input = ' '; for interactive mode
 	char op;
 	unsigned long long int address;
 	unsigned int bytesize;
@@ -72,8 +72,9 @@ int main( int argc, const char* argv[] ){
 	}
 	
 	int i;
-	Node *next, *l1_root, *l2_root;
-	l1_root = NULL;
+	Node *next, *l1d_root, *l1i_root, *l2_root;
+	l1d_root = NULL;
+	l1i_root = NULL;
 	l2_root = NULL;
 	
 	for(i = 0; i < l1_cache_size/L1BLOCKSIZE; i++){
@@ -81,8 +82,17 @@ int main( int argc, const char* argv[] ){
 			next->block_number = l1_cache_size/L1BLOCKSIZE - i - 1; 
 			next->dirty = false;
 			next->valid = false;
-			next->child = l1_root;
-			l1_root = next;
+			next->child = l1d_root;
+			l1d_root = next;
+		}
+		
+	for(i = 0; i < l1_cache_size/L1BLOCKSIZE; i++){
+			next = (Node *)malloc(sizeof(Node));
+			next->block_number = l1_cache_size/L1BLOCKSIZE - i - 1; 
+			next->dirty = false;
+			next->valid = false;
+			next->child = l1i_root;
+			l1i_root = next;
 		}
 		
 	for(i = 0; i < l2_cache_size/L2BLOCKSIZE; i++){
@@ -109,10 +119,10 @@ int main( int argc, const char* argv[] ){
 		
 		return 0;*/
 	
-	Node *current1, *current2; 
+	Node *current1/*, *current2*/; 
 	
 	
-	//Data being kept
+	/*//Data being kept
 	unsigned long long int execution_time = 0;
 	unsigned long long int data_read_refs = 0;
 	unsigned long long int data_write_refs = 0;
@@ -139,68 +149,95 @@ int main( int argc, const char* argv[] ){
 	unsigned long long int l2_kickouts = 0;
 	unsigned long long int l2_dirty_kickouts = 0;
 	unsigned long long int l2_transfers = 0;
-	
+*/
 	
 	
 	//this is for DM only, minor changes for other formats
 	int l1_index_bits = (log(L1BLOCKSIZE)/log(2)) + (log(l1_cache_size/L1BLOCKSIZE)/log(2));
-	int l2_index_bits = (log(L2BLOCKSIZE)/log(2)) + (log(l2_cache_size/L2BLOCKSIZE)/log(2));
+	//int l2_index_bits = (log(L2BLOCKSIZE)/log(2)) + (log(l2_cache_size/L2BLOCKSIZE)/log(2));
 	unsigned long long int maskliteral = 0xFFFFFFFFFFFF;
 	unsigned long long int tagmask1 = (maskliteral << l1_index_bits) & maskliteral;
-	unsigned long long int tagmask2 = (maskliteral << l2_index_bits) & maskliteral;
+	//unsigned long long int tagmask2 = (maskliteral << l2_index_bits) & maskliteral;
 	/*unsigned long long int indexmask1 = ~tagmask1;
 	unsigned long long int indexmask2 = ~tagmask2;
 	
 	
 	//printf("%i", sizeof(tagmask1));*/
 	
+	unsigned int references;
+	unsigned int counter = 0; 
+	unsigned int addresscounter=0;
 	
-	RESTART:
+	
+	NEW_ADDRESS:
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
-		current1 = l1_root;
-		printf("\ncheck:%s NEW ADRESS////////////////////////////////////\n", current1);
+		addresscounter++;
+		//op == 'I' ? current1 = l1i_root : current1 = l1d_root; Oddly this doesnt
+		// work and is equivalent to the code below.
+		
+		
+		printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter);
 		printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
 			l1_index_bits, tagmask1, address, address & tagmask1);
-			op == 'W' ? printf("Write\n") : printf("Read\n");
-		while(current1 != NULL){
-			if(current1->block_number == address%(l1_cache_size/L1BLOCKSIZE)){
-				printf("blocks match: %i %#lli\n", current1->block_number, 
+		
+		references = (int)(ceil((address%4 + bytesize)/4.0)); 
+		printf("refs %u\n",references);
+		
+			//op == 'W' ? printf("Write\n") : printf("Read or Instruction\n");
+		counter = 0;
+		NEW_WORD:
+		while(counter < references){ 
+			if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}	
+			//address = address + counter*4;
+			while(current1 != NULL){
+				if(current1->block_number == address%(l1_cache_size/L1BLOCKSIZE)){
+					printf("blocks match: %i %llu\n", current1->block_number, 
 											  address%(l1_cache_size/L1BLOCKSIZE));
-				printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
-				if(current1->tag == (address & tagmask1)){
-					if(current1->valid){
-						printf("Cache Hit\n");
-						if(op == 'W'){
-							current1->dirty = true; printf("entry marked dirty\n");
-							current1->address = address;
-							current1->tag = address & tagmask1;
-							current1->valid = true;
-						}else{
-							current1->valid = true;
+					printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
+					if(current1->tag == (address & tagmask1)){
+						if(current1->valid){
+							printf("Cache Hit\n");
+							if(op == 'W'){
+								current1->dirty = true; printf("entry marked dirty\n");
+								current1->address = address;
+								current1->tag = address & tagmask1;
+								current1->valid = true;
+							}else{
+								current1->valid = true;
+							}
+							if(!((counter + 1) < references)){
+								goto NEW_ADDRESS;
+							}else{
+								counter++;
+								address += 4;
+								goto NEW_WORD;
+							}
 						}
-						goto RESTART;
 					}
-				}
-				printf("Cache Miss\n");
-				if(current1->dirty){
-					printf("need to write to level 2\n");
-				}
+					printf("Cache Miss\n");
+					if(current1->dirty){
+						printf("need to write to level 2\n");
+					}
 				
-				printf("Need to return data from lower level memory\n");
-				current1->address = address;
-				current1->tag = address & tagmask1;
-				current1->valid = true;
-				if(op == 'W'){
-					current1->dirty = true;
-				}else{current1->dirty = false;}
-				
+					printf("Need to return data from lower level memory\n");
+					current1->address = address;
+					current1->tag = address & tagmask1;
+					current1->valid = true;
+					if(op == 'W'){
+						current1->dirty = true;
+					}else{current1->dirty = false;}
+					
+				}
+				current1 = current1->child;
 			}
-			current1 = current1->child;
+			printf("counter: %u\n", counter);
+			counter++;
+			address += 4;
 		} 
 	}
 	return 0;
 	
-	while(input != 'q' && input != 'Q' && INTERACTIVE){
+	/*while(input != 'q' && input != 'Q' && INTERACTIVE){
 		
 		printf("\nWelcome to the cache simulator. Please select from the options below:\n\
 				\n[Q]uit - Exits program.\n");
@@ -208,7 +245,7 @@ int main( int argc, const char* argv[] ){
 	
 	}
 	
-	return 0;
+	return 0;*/
 }
 
-//void simulate
+
