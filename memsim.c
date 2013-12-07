@@ -181,15 +181,13 @@ int main( int argc, const char* argv[] ){
 			l1_index_bits, tagmask1, address, address & tagmask1);
 		
 		references = (int)(ceil((address%4 + bytesize)/4.0)); 
-		address =  address - (address%4);
 		printf("refs %u\n",references);
-		
-			//op == 'W' ? printf("Write\n") : printf("Read or Instruction\n");
+		address =  address - (address%4);
 		counter = 0;
+		
 		NEW_WORD:
 		while(counter < references){ 
 			if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}	
-			//address = address + counter*4;
 			while(current1 != NULL){
 				if(current1->block_number == address%(l1_cache_size/L1BLOCKSIZE)){
 					printf("blocks match: %i %llu\n", current1->block_number, 
