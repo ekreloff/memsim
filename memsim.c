@@ -181,6 +181,7 @@ int main( int argc, const char* argv[] ){
 			l1_index_bits, tagmask1, address, address & tagmask1);
 		
 		references = (int)(ceil((address%4 + bytesize)/4.0)); 
+		address =  address - (address%4);
 		printf("refs %u\n",references);
 		
 			//op == 'W' ? printf("Write\n") : printf("Read or Instruction\n");
@@ -194,6 +195,7 @@ int main( int argc, const char* argv[] ){
 					printf("blocks match: %i %llu\n", current1->block_number, 
 											  address%(l1_cache_size/L1BLOCKSIZE));
 					printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
+					printf("current address:%#llX\n", address);
 					if(current1->tag == (address & tagmask1)){
 						if(current1->valid){
 							printf("Cache Hit\n");
@@ -230,7 +232,6 @@ int main( int argc, const char* argv[] ){
 				}
 				current1 = current1->child;
 			}
-			printf("counter: %u\n", counter);
 			counter++;
 			address += 4;
 		} 
