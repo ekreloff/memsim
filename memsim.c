@@ -136,22 +136,8 @@ int main( int argc, const char* argv[] ){
 			}
 		}
 		
-
-		/*Node *next1, *next2;
-		next1 = l1_root;
-		next2 = l2_root;
-		i = 0;
-		while(next1 != NULL){
-			i++;
-			//printf("\n%i %i", i, next->address);
-			printf("\n%i %i", i, next1->block_number);
-			next1 = next1->child; 
-		
-		}
-		
-		return 0;*/
 	
-	Node *current1, *setassocsearch1, *setassocsearch2 /*, *current2*/; 
+	Node *current1, *setassocsearch1, *setassocsearch2, *fasearch1, *fasearch2 /*, *current2*/; 
 	
 	
 	/*//Data being kept
@@ -196,6 +182,7 @@ int main( int argc, const char* argv[] ){
 	}
 	}
 	
+	printf("Number of sets: %i\n", num_of_sets);
 	//this is for DM only, minor changes for other formats
 	//int l2_index_bits = (log(L2BLOCKSIZE)/log(2)) + (log(l2_cache_size/L2BLOCKSIZE)/log(2));
 	//unsigned long long int tagmask2 = (maskliteral << l2_index_bits) & maskliteral;
@@ -213,7 +200,111 @@ int main( int argc, const char* argv[] ){
 	unsigned int addresscounter = 0;
 	switch(l1_assoc){
 		case 0:
-		printf("FA l1 cache\n");
+		NEW_ADDRESS_FA:
+	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
+		addresscounter++;
+		//op == 'I' ? current1 = l1i_root : current1 = l1d_root; Oddly this doesnt
+		// work and is equivalent to the code below.
+		
+		
+		printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter);
+		printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
+			l1_index_bits, tagmask1, address, address & tagmask1);
+		
+		references = (int)(ceil((address%4 + bytesize)/4.0)); 
+		printf("refs %u\n",references);
+		address =  address - (address%4);
+		counter = 0;
+		
+		NEW_WORD_FA:
+		while(counter < references){ 
+			if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}	
+			while(current1 != NULL){
+				//(current1->LRU)++;
+					//printf("Checking if tags match\n");
+					if(current1->tag == (address & tagmask1)){
+						printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
+						printf("Tags match, current address:%#llX\n", address);
+						if(current1->valid){
+							printf("Current is valid, setting current LRU to 0\n");
+							current1->LRU = 0;
+							printf("Cache Hit\n");
+							if(op == 'W'){
+								current1->dirty = true; printf("Write op: entry marked dirty\n");
+								current1->address = address;
+								current1->tag = address & tagmask1;
+								current1->valid = true;
+							}else{
+								current1->valid = true;
+							}
+							if(!((counter + 1) < references)){
+								printf("Last reference, going to new address\n");
+								goto NEW_ADDRESS_FA;
+							}else{
+								printf("Next reference, going to new word\n");
+								counter++;
+								address += 4;
+								goto NEW_WORD_FA;
+							}
+						}
+					}
+					//printf("checking if last search\n");
+					if(search_number == (l1_cache_size/L1BLOCKSIZE)){
+						printf("last search, highest LRU reset to zero\n");
+					highest_LRU = 0;
+					printf("Cache Miss\n");
+					if(op == 'I'){fasearch1 = l1i_root;}else{fasearch1 = l1d_root;}
+					while(fasearch1 != NULL){ 
+						//printf("finding highest LRU, FASEARCHlru: %i, current highest: %i\n", fasearch1->LRU, highest_LRU);
+						if(fasearch1->LRU > highest_LRU){
+							printf("LRU higher and being replaced\n");
+							highest_LRU = fasearch1->LRU;
+						}else{fasearch1->LRU++;}
+						fasearch1 = fasearch1->child;
+					}
+					
+					if(op == 'I'){fasearch1 = l1i_root;}else{fasearch1 = l1d_root;}
+					while(fasearch1 != NULL){ 
+						//printf("deleting highest LRU, FASEARCHlru: %i, current highest: %i\n", fasearch1->LRU, highest_LRU);
+						if(fasearch1->LRU >= highest_LRU){
+							fasearch2 = fasearch1;
+							printf("highest match LRU replaced: %i\n", fasearch2->LRU);
+							break;
+						}
+						fasearch1 = fasearch1->child;
+					}
+					
+					fasearch2->LRU = 0;
+					
+					
+					if(fasearch2->dirty){
+						printf("need to write to level 2\n");
+					}
+				
+					printf("Need to return data from lower level memory\n");
+					fasearch2->address = address;
+					fasearch2->tag = address & tagmask1;
+					fasearch2->valid = true;
+					if(op == 'W'){
+						fasearch2->dirty = true;
+					}else{fasearch2->dirty = false;}
+					if(!((counter + 1) < references)){
+								goto NEW_ADDRESS_FA;
+							}else{
+								counter++;
+								address += 4;
+								goto NEW_WORD_FA;
+							}
+				}else{search_number++;}
+				
+					
+				current1 = current1->child;
+			}
+			search_number = 1;
+			counter++;
+			address += 4;
+		} 
+	}
 		break;
 		case 1:
 	NEW_ADDRESS:
@@ -286,7 +377,6 @@ int main( int argc, const char* argv[] ){
 	NEW_ADDRESS_SA:
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
 		addresscounter++;
-		
 		printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter);
 		printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
 			l1_index_bits, tagmask1, address, address & tagmask1);
@@ -307,9 +397,10 @@ int main( int argc, const char* argv[] ){
 					printf("current address:%#llX\n", address);
 					if(current1->tag == (address & tagmask1)){
 						if(current1->valid){
+							current1->LRU = 0;
 							printf("Cache Hit\n");
 							if(op == 'W'){
-								current1->dirty = true; printf("entry marked dirty\n");
+								current1->dirty = true; printf("entry marked dirty!!!!!!!!!!!!!!!!!\n");
 								current1->address = address;
 								current1->tag = address & tagmask1;
 								current1->valid = true;
@@ -325,24 +416,28 @@ int main( int argc, const char* argv[] ){
 							}
 						}
 					}
+					highest_LRU = 0;
 					printf("Cache Miss\n");
-					
 					printf("search Number: %i, %i\n", search_number, l1_assoc);
 					if(search_number == l1_assoc){
 					if(op == 'I'){setassocsearch1 = l1i_root;}else{setassocsearch1 = l1d_root;}
 					while(setassocsearch1 != NULL){
-						if((setassocsearch1->LRU > highest_LRU) && (current1->set_number == setassocsearch1->set_number)){
+						//printf("Set LRU: %i, highest: %i\n", setassocsearch1->LRU, highest_LRU); 
+						if((setassocsearch1->LRU > highest_LRU) && ((address%num_of_sets) == setassocsearch1->set_number)){
 							highest_LRU = setassocsearch1->LRU;
-							printf("1: %i, %i\n", highest_LRU, setassocsearch1->LRU);
-						}
+						}else{setassocsearch1->LRU++;}
 						setassocsearch1 = setassocsearch1->child;
 					}
+					
+					//printf("1: %i\n", highest_LRU);
+					
 					if(op == 'I'){setassocsearch1 = l1i_root;}else{setassocsearch1 = l1d_root;}
 					while(setassocsearch1 != NULL){
-						if((setassocsearch1->LRU == highest_LRU) && (current1->set_number == setassocsearch1->set_number)){
+						if((setassocsearch1->LRU >= highest_LRU) && ((address%num_of_sets) == setassocsearch1->set_number)){
+							//printf("check sets in loop: %i, %i\n", (address%num_of_sets), setassocsearch1->set_number);
 							setassocsearch2 = setassocsearch1;
-							printf("%i\n", setassocsearch2->block_number);
-							printf("2: %i, %i\n", highest_LRU, setassocsearch1->LRU);
+							//printf("%i\n", setassocsearch2->set_number);
+							//printf("2: %i, %i\n", highest_LRU, setassocsearch1->LRU);
 							break;
 						}
 						setassocsearch1 = setassocsearch1->child;
@@ -350,17 +445,18 @@ int main( int argc, const char* argv[] ){
 					
 					if(op == 'I'){setassocsearch1 = l1i_root;}else{setassocsearch1 = l1d_root;}
 					while(setassocsearch1 != NULL){
-						if((setassocsearch1->LRU <= highest_LRU) && (current1->set_number == setassocsearch1->set_number)){
-							(setassocsearch1->LRU)++;
-							printf("3: %i, %i\n", highest_LRU, setassocsearch1->LRU);
+						if((address%num_of_sets) == setassocsearch1->set_number){
+							//printf("3: %i, %i\n", highest_LRU, setassocsearch1->LRU);
 						}
 						setassocsearch1 = setassocsearch1->child;
 					}
 					setassocsearch2->LRU = 0;
-					printf("%i\n", setassocsearch2->block_number);
-					
+					//printf("current tag:%#llX address tag:%#llX\n", setassocsearch2->tag, address & tagmask1);
+						//printf("current address:%#llX\n", address);
 					if(setassocsearch2->dirty){
-						printf("need to write to level 2\n");
+						printf("need to write to level 2*************************\n");
+						//printf("sets match: %i %llu\n", setassocsearch2->set_number, 
+											  //address%num_of_sets);
 					}
 				
 					printf("Need to return data from lower level memory\n");
@@ -370,6 +466,13 @@ int main( int argc, const char* argv[] ){
 					if(op == 'W'){
 						setassocsearch2->dirty = true;
 					}else{setassocsearch2->dirty = false;}
+					if(!((counter + 1) < references)){
+								goto NEW_ADDRESS_SA;
+							}else{
+								counter++;
+								address += 4;
+								goto NEW_WORD_SA;
+							}
 				}else{search_number++;}
 					
 				}
