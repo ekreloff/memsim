@@ -44,12 +44,13 @@ typedef struct node{
 	unsigned int set_number;
 	unsigned int block_number;
 	unsigned int LRU;
-	bool LRU_replacment;
 	bool dirty;
 	bool valid;
 	struct node *child;
 } Node;
 
+
+void printcache(Node cache);
 
 int main( int argc, const char* argv[] ){
 	
@@ -85,7 +86,6 @@ int main( int argc, const char* argv[] ){
 			next = (Node *)malloc(sizeof(Node));
 			next->block_number = l1_cache_size/L1BLOCKSIZE - i - 1; 
 			next->LRU = 0;
-			next->LRU_replacment = false;
 			next->dirty = false;
 			next->valid = false;
 			next->child = l1d_root;
@@ -104,7 +104,6 @@ int main( int argc, const char* argv[] ){
 			next = (Node *)malloc(sizeof(Node));
 			next->block_number = l1_cache_size/L1BLOCKSIZE - i - 1; 
 			next->LRU = 0;
-			next->LRU_replacment = false;
 			next->dirty = false;
 			next->valid = false;
 			next->child = l1i_root;
@@ -123,7 +122,6 @@ int main( int argc, const char* argv[] ){
 			next = (Node *)malloc(sizeof(Node));
 			next->block_number = l2_cache_size/L2BLOCKSIZE - i - 1;
 			next->LRU = 0;
-			next->LRU_replacment = false;
 			next->dirty = false;
 			next->valid = false;
 			next->child = l2_root;
@@ -176,10 +174,10 @@ int main( int argc, const char* argv[] ){
 		l1_index_bits = (log(L1BLOCKSIZE)/log(2)) + (log(l1_cache_size/L1BLOCKSIZE)/log(2));
 	}else{if(l1_assoc == 0){
 		l1_index_bits = (log(L1BLOCKSIZE)/log(2));
-	}else{
-		num_of_sets = (l1_cache_size/L1BLOCKSIZE)/l1_assoc;
-		l1_index_bits = (log(L1BLOCKSIZE)/log(2)) + (log(num_of_sets)/log(2));
-	}
+		}else{
+			num_of_sets = (l1_cache_size/L1BLOCKSIZE)/l1_assoc;
+			l1_index_bits = (log(L1BLOCKSIZE)/log(2)) + (log(num_of_sets)/log(2));
+		}
 	}
 	
 	printf("Number of sets: %i\n", num_of_sets);
@@ -203,10 +201,6 @@ int main( int argc, const char* argv[] ){
 		NEW_ADDRESS_FA:
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
 		addresscounter++;
-		//op == 'I' ? current1 = l1i_root : current1 = l1d_root; Oddly this doesnt
-		// work and is equivalent to the code below.
-		
-		
 		printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter);
 		printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
 			l1_index_bits, tagmask1, address, address & tagmask1);
@@ -309,11 +303,7 @@ int main( int argc, const char* argv[] ){
 		case 1:
 	NEW_ADDRESS:
 	while (scanf("%c %Lx %d\n", &op, &address, &bytesize) == 3) {
-		addresscounter++;
-		//op == 'I' ? current1 = l1i_root : current1 = l1d_root; Oddly this doesnt
-		// work and is equivalent to the code below.
-		
-		
+		addresscounter++;		
 		printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter);
 		printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
 			l1_index_bits, tagmask1, address, address & tagmask1);
@@ -466,6 +456,7 @@ int main( int argc, const char* argv[] ){
 					if(op == 'W'){
 						setassocsearch2->dirty = true;
 					}else{setassocsearch2->dirty = false;}
+					printcache(*setassocsearch2);
 					if(!((counter + 1) < references)){
 								goto NEW_ADDRESS_SA;
 							}else{
@@ -495,6 +486,18 @@ int main( int argc, const char* argv[] ){
 	}
 	
 	return 0;*/
+}
+
+void printcache(Node cache){
+	
+	Node *temp = &cache;
+		printf("Cache Address: %#llX Cache tag: %#llX Cache Set: %i\n\
+		Cache Block: %i Cache LRU count: %i Dirty?: %i Valid?: %i \n\
+		Next Cache Block: %i\n|\n|\n|\nV\n\n", temp->address, temp->tag, 
+		temp->set_number, temp->block_number, temp->LRU, temp->dirty, 
+		temp->valid, temp->child == NULL ? 0 : temp->child->block_number);
+		
+	
 }
 
 
