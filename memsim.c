@@ -11,7 +11,7 @@
 #include <math.h>
 
 //Set to 1 to allow doing multiple simulations
-#define INTERACTIVE 0
+//#define INTERACTIVE 0
 
 //cache constants in bytes
 #define L1BLOCKSIZE 32
