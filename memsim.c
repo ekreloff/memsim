@@ -42,7 +42,7 @@ typedef struct node{
 	unsigned long long int address;
 	unsigned long long int tag;
 	unsigned int set_number;
-	unsigned int block_number;
+	unsigned long long int block_number;
 	unsigned int LRU;
 	bool LRU_replacment;
 	bool dirty;
@@ -74,7 +74,7 @@ int main( int argc, const char* argv[] ){
 	  }
 	}
 	
-	int i;
+	int i; 
 	unsigned int set_number = 0;
 	Node *next, *l1d_root, *l1i_root, *l2_root;
 	l1d_root = NULL;
@@ -97,7 +97,6 @@ int main( int argc, const char* argv[] ){
 				}
 			}
 		}
-		
 	set_number = 0;
 		
 	for(i = 0; i < l1_cache_size/L1BLOCKSIZE; i++){
@@ -207,6 +206,8 @@ int main( int argc, const char* argv[] ){
 	
 	unsigned long long int maskliteral = 0xFFFFFFFFFFFF;
 	unsigned long long int tagmask1 = (maskliteral << l1_index_bits) & maskliteral;
+	unsigned long long int indexmask1 = (maskliteral >> (48 - l1_index_bits)) & 
+										(maskliteral << (int)(log(L1BLOCKSIZE)/log(2)));
 	
 	unsigned int references;
 	unsigned int counter = 0; 
@@ -236,9 +237,10 @@ int main( int argc, const char* argv[] ){
 		while(counter < references){ 
 			if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}	
 			while(current1 != NULL){
-				if(current1->block_number == address%(l1_cache_size/L1BLOCKSIZE)){
-					printf("blocks match: %i %llu\n", current1->block_number, 
-											  address%(l1_cache_size/L1BLOCKSIZE));
+				//printf("current: %llu address block: %llu\n",current1->block_number , (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
+				if(current1->block_number == (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2))){
+					printf("blocks match: %llu %llu\n", current1->block_number, 
+											  (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
 					printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
 					printf("current address:%#llX\n", address);
 					if(current1->tag == (address & tagmask1)){
