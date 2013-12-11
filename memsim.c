@@ -264,8 +264,10 @@ int main( int argc, const char* argv[] ){
 							current1->LRU = 0;
 							
 							if(!((counter + 1) < references)){
+								highest_LRU = 0;
 								goto NEW_ADDRESS_FA;
 							}else{
+								highest_LRU = 0;
 								counter++;
 								address += 4;
 								goto NEW_WORD_FA;
@@ -286,7 +288,7 @@ int main( int argc, const char* argv[] ){
 					if(op == 'I'){setassocsearch1 = l1i_root;}else{setassocsearch1 = l1d_root;}
 					while(setassocsearch1 != NULL){
 						if(setassocsearch1->LRU == highest_LRU){
-							setassocsearch2 = setassocsearch1;
+							//setassocsearch2 = setassocsearch1;
 									//	printf("replacing block: %i block LRU: %i highest lru: %i", setassocsearch2->block_number, setassocsearch2->LRU, highest_LRU);
 							break;
 						}
@@ -294,25 +296,27 @@ int main( int argc, const char* argv[] ){
 					}
 					printf("Cache Miss\n");
 					
-					setassocsearch2->LRU = 0;
-					printf("%i\n", setassocsearch2->block_number);
+					setassocsearch1->LRU = 0;
+					printf("%i\n", setassocsearch1->block_number);
 					
-					if(setassocsearch2->dirty){
+					if(setassocsearch1->dirty){
 						printf("need to write to level 2\n");
 					}
 				
 					printf("Need to return data from lower level memory\n");
-					setassocsearch2->address = address;
-					setassocsearch2->tag = address & tagmask1;
-					setassocsearch2->valid = true;
+					setassocsearch1->address = address;
+					setassocsearch1->tag = address & tagmask1;
+					setassocsearch1->valid = true;
 					if(op == 'W'){
-						setassocsearch2->dirty = true;
-					}else{setassocsearch2->dirty = false;}
+						setassocsearch1->dirty = true;
+					}else{setassocsearch1->dirty = false;}
 					
 					
 					if(!((counter + 1) < references)){
+								highest_LRU = 0;
 								goto NEW_ADDRESS_FA;
 							}else{
+								highest_LRU = 0;
 								counter++;
 								address += 4;
 								goto NEW_WORD_FA;
