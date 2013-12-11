@@ -306,7 +306,6 @@ int main( int argc, const char* argv[] ){
 											  (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
 					printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
 					printf("current address:%#llX\n", address);
-					for(i = 0; i < l1_assoc; i++){
 					if(current1->tag == (address & tagmask1)){
 						if(current1->valid){
 							printf("Cache Hit\n");
@@ -344,15 +343,11 @@ int main( int argc, const char* argv[] ){
 					}
 					printf("Cache Miss\n");
 					
-					if(i == l1_assoc - 1){
+					//if(i == l1_assoc - 1){
 					if(op == 'I'){setassocsearch1 = l1i_root;}else{setassocsearch1 = l1d_root;}
 					while(setassocsearch1 != NULL){
 						if(setassocsearch1->set_number == (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2))){
-									for(i = 0; i < l1_assoc; i++){
 										(setassocsearch1->LRU)++;
-										setassocsearch1 = setassocsearch1->child;
-									}
-									break;
 								}
 						setassocsearch1 = setassocsearch1->child;
 					}
@@ -362,7 +357,6 @@ int main( int argc, const char* argv[] ){
 									//printf("replacing block: %i block LRU: %i highest lru: %i", setassocsearch1->block_number, setassocsearch1->LRU, highest_LRU);
 									if(setassocsearch1->LRU > highest_LRU){
 										highest_LRU = setassocsearch1->LRU;
-									//printf("replacing block: %i block LRU: %i highest lru: %i\n", setassocsearch1->block_number, setassocsearch1->LRU, highest_LRU);
 									}
 								}
 						setassocsearch1 = setassocsearch1->child;
@@ -378,7 +372,8 @@ int main( int argc, const char* argv[] ){
 								}
 						setassocsearch1 = setassocsearch1->child;
 					}
-					
+					//printf("replacing block: %i block LRU: %i highest lru: %i\n", setassocsearch1->block_number, setassocsearch1->LRU, highest_LRU);
+
 					setassocsearch2->LRU = 0;
 					printf("%i\n", setassocsearch2->block_number);
 					
@@ -394,9 +389,6 @@ int main( int argc, const char* argv[] ){
 						setassocsearch2->dirty = true;
 					}else{setassocsearch2->dirty = false;}
 					
-					if(i+1 < l1_assoc){
-						current1 = current1->child;
-					}
 					
 					if(!((counter + 1) < references)){
 								goto NEW_ADDRESS_SA;
@@ -405,8 +397,8 @@ int main( int argc, const char* argv[] ){
 								address += 4;
 								goto NEW_WORD_SA;
 							}
-				}
-				}
+				//}
+				
 			    }
 				current1 = current1->child;
 			}
