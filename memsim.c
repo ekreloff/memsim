@@ -51,6 +51,9 @@ typedef struct node{
 } Node;
 
 
+void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
+			 char op, unsigned int bytesize);
+
 int main( int argc, const char* argv[] ){
 	
 	FILE *config_fp;
@@ -150,9 +153,7 @@ int main( int argc, const char* argv[] ){
 		
 		}
 		
-		return 0;*/
-	
-	Node *current1, *setassocsearch1, *setassocsearch2 /*, *current2*/; 
+		return 0;*/ 
 	
 	
 	/*//Data being kept
@@ -183,6 +184,8 @@ int main( int argc, const char* argv[] ){
 	unsigned long long int l2_dirty_kickouts = 0;
 	unsigned long long int l2_transfers = 0;
 */
+
+	Node *current1, *setassocsearch1, *setassocsearch2 /*, *current2*/;
 	int l1_index_bits, num_of_sets;
 	int highest_LRU = 0;
 	
@@ -304,6 +307,7 @@ int main( int argc, const char* argv[] ){
 					}
 				
 					printf("Need to return data from lower level memory\n");
+					l2cache(l2_assoc, l2_cache_size, l2_root, address, op, bytesize);
 					setassocsearch1->address = address;
 					setassocsearch1->tag = address & tagmask1;
 					setassocsearch1->valid = true;
@@ -379,9 +383,10 @@ int main( int argc, const char* argv[] ){
 					printf("Cache Miss\n");
 					if(current1->dirty){
 						printf("need to write to level 2\n");
+						
 					}
-				
 					printf("Need to return data from lower level memory\n");
+					l2cache(l2_assoc, l2_cache_size, l2_root, address, op, bytesize);
 					current1->address = address;
 					current1->tag = address & tagmask1;
 					current1->valid = true;
@@ -500,8 +505,9 @@ int main( int argc, const char* argv[] ){
 					if(setassocsearch1->dirty){
 						printf("need to write to level 2\n");
 					}
-				
+					
 					printf("Need to return data from lower level memory\n");
+					l2cache(l2_assoc, l2_cache_size, l2_root, address, op, bytesize);
 					setassocsearch1->address = address;
 					setassocsearch1->tag = address & tagmask1;
 					setassocsearch1->valid = true;
@@ -532,5 +538,231 @@ int main( int argc, const char* argv[] ){
 	return 0;
 	
 }
+
+void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
+			 char op, unsigned int bytesize){
+				 
+	printf("	l2 called\n");
+	Node *current2, *setassocsearch2;
+	int l2_index_bits, num_of_sets;
+	int highest_LRU = 0;
+	
+	if(l2_assoc == 1){
+		l2_index_bits = (log(L2BLOCKSIZE)/log(2)) + (log(l2_cache_size/L2BLOCKSIZE)/log(2));
+	}else{if(l2_assoc == 0){
+		l2_index_bits = (log(L2BLOCKSIZE)/log(2));
+		}else{
+			num_of_sets = (l2_cache_size/L1BLOCKSIZE)/l2_assoc;
+			l2_index_bits = (log(L1BLOCKSIZE)/log(2)) + (log(num_of_sets)/log(2));
+		}
+	}
+	
+	unsigned long long int maskliteral = 0xFFFFFFFFFFFF;
+	unsigned long long int tagmask2 = (maskliteral << l2_index_bits) & maskliteral;
+	unsigned long long int indexmask2 = (maskliteral >> (48 - l2_index_bits)) & 
+										(maskliteral << (int)(log(L2BLOCKSIZE)/log(2)));
+	
+	unsigned int references;
+	unsigned int counter = 0; 
+	unsigned int addresscounter = 0;
+	switch(l2_assoc){
+		case 0:
+			current2 = l2_root;	
+			while(current2 != NULL){
+					if(current2->tag == (address & tagmask2)){
+						printf("	tags match: %#llX %#llX\n", current2->tag, (address & tagmask2));
+						printf("	current address:%#llX\n", address);
+						if(current2->valid){
+							printf("	Cache Hit\n");
+							if(op == 'W'){
+								current2->dirty = true; printf("	entry marked dirty\n");
+								current2->address = address;
+								current2->tag = address & tagmask2;
+								current2->valid = true;
+							}else{
+								current2->valid = true;
+							}
+							
+							setassocsearch2 = l2_root;
+							while(setassocsearch2 != NULL){
+								(setassocsearch2->LRU)++;
+								setassocsearch2 = setassocsearch2->child;
+							}
+							
+							current2->LRU = 0;
+							break;
+						}
+					}
+					(current2->LRU)++;		
+					//printf("blcok number: %i %i\n", current1->block_number,num_of_lines);
+					if(current2->block_number == (l2_cache_size/L2BLOCKSIZE - 1)){
+						
+					setassocsearch2 = l2_root;
+					while(setassocsearch2 != NULL){
+						if(setassocsearch2->LRU > highest_LRU){
+							highest_LRU = setassocsearch2->LRU;
+						}
+						setassocsearch2 = setassocsearch2->child;
+					}
+					setassocsearch2 = l2_root;
+					while(setassocsearch2 != NULL){
+						if(setassocsearch2->LRU == highest_LRU){
+							//setassocsearch2 = setassocsearch1;
+									//	printf("replacing block: %i block LRU: %i highest lru: %i", setassocsearch2->block_number, setassocsearch2->LRU, highest_LRU);
+							break;
+						}
+						setassocsearch2 = setassocsearch2->child;
+					}
+					printf("	Cache Miss\n");
+					
+					setassocsearch2->LRU = 0;
+					printf("	%i\n", setassocsearch2->block_number);
+					
+					if(setassocsearch2->dirty){
+						printf("	need to write to level 2\n");
+					}
+				
+					printf("	Need to return data from lower level memory\n");
+					setassocsearch2->address = address;
+					setassocsearch2->tag = address & tagmask2;
+					setassocsearch2->valid = true;
+					if(op == 'W'){
+						setassocsearch2->dirty = true;
+					}else{setassocsearch2->dirty = false;}
+				}
+				current2 = current2->child;
+			}
+		break;
+		case 1: 
+			current2 = l2_root;	
+			while(current2 != NULL){
+				if(current2->block_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
+					printf("	blocks match: %llu %llu\n", current2->block_number, 
+											  (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2)));
+					printf("	current tag:%#llX address tag:%#llX\n", current2->tag, address & tagmask2);
+					printf("	current address:%#llX\n", address);
+					if(current2->tag == (address & tagmask2)){
+						if(current2->valid){
+							printf("	Cache Hit\n");
+							if(op == 'W'){
+								current2->dirty = true; printf("	entry marked dirty\n");
+								current2->address = address;
+								current2->tag = address & tagmask2;
+								current2->valid = true;
+							}else{
+								current2->valid = true;
+							}
+							break;
+						}
+					}
+					printf("	Cache Miss\n");
+					if(current2->dirty){
+						printf("	need to write to main\n");
+					}
+				
+					printf("	Need to return data from main memory\n");
+					current2->address = address;
+					current2->tag = address & tagmask2;
+					current2->valid = true;
+					if(op == 'W'){
+						current2->dirty = true;
+					}else{current2->dirty = false;}
+					
+				}
+				current2 = current2->child;
+			}
+	
+	break;
+	default:
+			current2 = l2_root;
+			while(current2 != NULL){
+				if(current2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
+					printf("	sets match: %i %llu\n", current2->set_number, 
+											  (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2)));
+					printf("	current tag:%#llX address tag:%#llX\n", current2->tag, address & tagmask2);
+					printf("	current address:%#llX\n", address);
+					if(current2->tag == (address & tagmask2)){
+						if(current2->valid){
+							printf("	Cache Hit\n");
+							if(op == 'W'){
+								current2->dirty = true; printf("	entry marked dirty\n");
+								current2->address = address;
+								current2->tag = address & tagmask2;
+								current2->valid = true;
+							}else{
+								current2->valid = true;
+							}
+							
+							setassocsearch2 = l2_root;
+							while(setassocsearch2 != NULL){
+								if(setassocsearch2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
+										(setassocsearch2->LRU)++;
+								}
+								setassocsearch2 = setassocsearch2->child;
+							}
+							
+							current2->LRU = 0;
+							break;
+							
+						}
+					}
+					
+					if((current2->block_number%l2_assoc) == (l2_assoc - 1)){
+					printf("	Cache Miss\n");
+					
+					setassocsearch2 = l2_root;
+					while(setassocsearch2 != NULL){
+						if(setassocsearch2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
+										(setassocsearch2->LRU)++;
+								}
+						setassocsearch2 = setassocsearch2->child;
+					}
+					setassocsearch2 = l2_root;
+					while(setassocsearch2 != NULL){
+						if(setassocsearch2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
+									//printf("replacing block: %i block LRU: %i highest lru: %i", setassocsearch1->block_number, setassocsearch1->LRU, highest_LRU);
+									if(setassocsearch2->LRU > highest_LRU){
+										highest_LRU = setassocsearch2->LRU;
+										printf("	highest: %i, current: %i\n", highest_LRU, setassocsearch2->LRU);
+									}
+								}
+						setassocsearch2 = setassocsearch2->child;
+					}
+					setassocsearch2 = l2_root;
+					while(setassocsearch2 != NULL){
+						if(setassocsearch2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
+									if(setassocsearch2->LRU == highest_LRU){
+										break;
+									}
+								}
+						setassocsearch2 = setassocsearch2->child;
+					}
+					setassocsearch2->LRU = 0;
+					
+					printf("	%i\n", setassocsearch2->block_number);
+					
+					if(setassocsearch2->dirty){
+						printf("	need to write to level 2\n");
+					}
+				
+					printf("	Need to return data from lower level memory\n");
+					setassocsearch2->address = address;
+					setassocsearch2->tag = address & tagmask2;
+					setassocsearch2->valid = true;
+					if(op == 'W'){
+						setassocsearch2->dirty = true;
+					}else{setassocsearch2->dirty = false;}
+				
+			    }
+			}
+				current2 = current2->child;
+		}
+
+}
+	return 0;
+	
+}
+
+
 
 
