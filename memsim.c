@@ -451,6 +451,8 @@ int main( int argc, const char* argv[] ){
 							}
 						}
 					}
+					
+					if((current1->block_number%l1_assoc) == (l1_assoc - 1)){
 					printf("Cache Miss\n");
 					
 					if(op == 'I'){setassocsearch1 = l1i_root;}else{setassocsearch1 = l1d_root;}
@@ -466,7 +468,7 @@ int main( int argc, const char* argv[] ){
 									//printf("replacing block: %i block LRU: %i highest lru: %i", setassocsearch1->block_number, setassocsearch1->LRU, highest_LRU);
 									if(setassocsearch1->LRU > highest_LRU){
 										highest_LRU = setassocsearch1->LRU;
-										printf("highest: %i, current: %i", highest_LRU, setassocsearch1->LRU);
+										printf("highest: %i, current: %i\n", highest_LRU, setassocsearch1->LRU);
 									}
 								}
 						setassocsearch1 = setassocsearch1->child;
@@ -475,7 +477,7 @@ int main( int argc, const char* argv[] ){
 					while(setassocsearch1 != NULL){
 						if(setassocsearch1->set_number == (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2))){
 									
-									if(setassocsearch1->LRU >= highest_LRU){
+									if(setassocsearch1->LRU == highest_LRU){
 										
 										//setassocsearch2 = setassocsearch1;
 									//printf("replacing block: %i block LRU: %i highest lru: %i", setassocsearch2->block_number, setassocsearch2->LRU, highest_LRU);
@@ -515,6 +517,7 @@ int main( int argc, const char* argv[] ){
 							}
 				
 			    }
+			}
 				current1 = current1->child;
 			}
 			counter++;
