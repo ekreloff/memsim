@@ -79,6 +79,9 @@ typedef struct data{
 void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
 			 char op, Data *data_ptr);
 
+void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
+                  Data * data_ptr);
+
 int main( int argc, const char* argv[] ){
 	
 	FILE *config_fp;
@@ -292,6 +295,13 @@ int main( int argc, const char* argv[] ){
                                 printf("%llu\n", setassocsearch1->block_number);
                                 if(setassocsearch1->dirty){
                                     printf("need to write to level 2\n");
+                                    l2cachewrite(l2_assoc, l2_cache_size, l2_root, address, data_ptr);
+                                    if(current1->tag != 0){
+                                        if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
+                                    }
+                                }
+                                if(current1->tag != 0){
+                                    if(op == 'I'){data_ptr->l1i_kickouts++;}else{data_ptr->l1d_kickouts++;}
                                 }
                                 printf("Need to return data from lower level memory\n");
                                 l2cache(l2_assoc, l2_cache_size, l2_root, address, op, data_ptr);
@@ -364,6 +374,13 @@ int main( int argc, const char* argv[] ){
                             if(op == 'I'){data_ptr->l1i_miss_count++;}else{data_ptr->l1d_miss_count++;}
                             if(current1->dirty){
                                 printf("need to write to level 2\n");
+                                l2cachewrite(l2_assoc, l2_cache_size, l2_root, address, data_ptr);
+                                if(current1->tag != 0){
+                                    if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
+                                }
+                            }
+                            if(current1->tag != 0){
+                                if(op == 'I'){data_ptr->l1i_kickouts++;}else{data_ptr->l1d_kickouts++;}
                             }
                             printf("Need to return data from lower level memory\n");
                             l2cache(l2_assoc, l2_cache_size, l2_root, address, op, data_ptr);
@@ -469,6 +486,13 @@ int main( int argc, const char* argv[] ){
                                 printf("%llu\n", setassocsearch1->block_number);
                                 if(setassocsearch1->dirty){
                                     printf("need to write to level 2\n");
+                                    l2cachewrite(l2_assoc, l2_cache_size, l2_root, address, data_ptr);
+                                    if(current1->tag != 0){
+                                        if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
+                                    }
+                                }
+                                if(current1->tag != 0){
+                                    if(op == 'I'){data_ptr->l1i_kickouts++;}else{data_ptr->l1d_kickouts++;}
                                 }
                                 printf("Need to return data from lower level memory\n");
                                 l2cache(l2_assoc, l2_cache_size, l2_root, address, op, data_ptr);
@@ -497,9 +521,11 @@ int main( int argc, const char* argv[] ){
                 }
             }
         }
-        printf("l1i hits: %llu l1i misses: %llu l1d hits: %llu l1d misses: %llu l2 hits: %llu l2 misses: %llu\n",
+        printf("l1i hits: %llu l1i misses: %llu l1d hits: %llu l1d misses: %llu l2 hits: %llu l2 misses: %llu\n\
+                l1i kickouts: %llu, dirty %llu l1d kickouts: %llu, dirty %llu l2 kickouts: %llu, dirty %llu\n",
                data_ptr->l1i_hit_count, data_ptr->l1i_miss_count, data_ptr->l1d_hit_count, data_ptr->l1d_miss_count,
-               data_ptr->l2_hit_count, data_ptr->l2_miss_count);
+               data_ptr->l2_hit_count, data_ptr->l2_miss_count, data_ptr->l1i_kickouts, data_ptr->l1i_dirty_kickouts,
+               data_ptr->l1d_kickouts, data_ptr->l1d_dirty_kickouts, data_ptr->l2_kickouts, data_ptr->l2_dirty_kickouts);
         return 0;
 	
 }
@@ -574,9 +600,13 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                         setassocsearch2->LRU = 0;
                         printf("	%llu\n", setassocsearch2->block_number);
                         if(setassocsearch2->dirty){
-                            printf("	need to write to level 2\n");
+                            printf("	need to write to main\n");
+                            if(current2->tag != 0){
+                                data_ptr->l2_dirty_kickouts++;
+                            }
                         }
-                        printf("	Need to return data from lower level memory\n");
+                        printf("	Need to return data from main\n");
+                        if(current2->tag != 0){data_ptr->l2_kickouts++;}
                         setassocsearch2->address = address;
                         setassocsearch2->tag = address & tagmask2;
                         setassocsearch2->valid = true;
@@ -614,7 +644,11 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                         data_ptr->l2_miss_count++;
                         if(current2->dirty){
                             printf("	need to write to main\n");
+                            if(current2->tag != 0){
+                                data_ptr->l2_dirty_kickouts++;
+                            }
                         }
+                        if(current2->tag != 0){data_ptr->l2_kickouts++;}
                         printf("	Need to return data from main memory\n");
                         current2->address = address;
                         current2->tag = address & tagmask2;
@@ -690,8 +724,12 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                             setassocsearch2->LRU = 0;
                             printf("	%llu\n", setassocsearch2->block_number);
                             if(setassocsearch2->dirty){
-                                printf("	need to write to level 2\n");
+                                printf("	need to write to main\n");
+                                if(current2->tag != 0){
+                                    data_ptr->l2_dirty_kickouts++;
+                                }
                             }
+                            if(current2->tag != 0){data_ptr->l2_kickouts++;}
                             printf("	Need to return data from lower level memory\n");
                             setassocsearch2->address = address;
                             setassocsearch2->tag = address & tagmask2;
@@ -707,6 +745,33 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
 
         }
 	
+}
+
+void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address, Data * data_ptr){
+    Node *writesearch = l2_root;
+    int l2_index_bits, num_of_sets;
+    
+	if(l2_assoc == 1){
+		l2_index_bits = (log(L2BLOCKSIZE)/log(2)) + (log(l2_cache_size/L2BLOCKSIZE)/log(2));
+	}else{if(l2_assoc == 0){
+		l2_index_bits = (log(L2BLOCKSIZE)/log(2));
+    }else{
+        num_of_sets = (l2_cache_size/L1BLOCKSIZE)/l2_assoc;
+        l2_index_bits = (log(L1BLOCKSIZE)/log(2)) + (log(num_of_sets)/log(2));
+    }
+	}
+	
+	unsigned long long int maskliteral = 0xFFFFFFFFFFFF;
+	unsigned long long int tagmask2 = (maskliteral << l2_index_bits) & maskliteral;
+    
+    while (writesearch != NULL) {
+        if (writesearch->tag == (address & tagmask2) ) {
+            printf("block marked dirty in 2\n");
+            writesearch->dirty = true;
+        }
+        writesearch = writesearch->child;
+    }
+
 }
 
 
