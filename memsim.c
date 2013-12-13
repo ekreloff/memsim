@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 //cache constants in bytes
 #define L1BLOCKSIZE 32
@@ -76,17 +77,19 @@ typedef struct data{
 void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
 			 char op, Data *data_ptr, int mem_chunk_size);
 
-void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
-                  Data * data_ptr);
+void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address);
 
-void outputcost();
+void outputcost(int l1cachesize, int l1assoc, int l2cachesize, int l2assoc,
+                int memchunksize, int *l1cache, int *l2cache, int *main);
 
 int main( int argc, const char* argv[] ){
 	
-	FILE *config_fp;
+	FILE *config_fp, *output_fp;
+    char outputfname[30];
 	char op;
 	unsigned long long int address;
 	unsigned int bytesize;
+    int l1_cache_cost, l2_cache_cost, main_cost;
 	
 	//Initialize parameters
 	int l1_cache_size = 8192; 
@@ -101,7 +104,7 @@ int main( int argc, const char* argv[] ){
 			&l1_cache_size, &l1_assoc, &l2_cache_size, &l2_assoc, &mem_chunk_size) == 5){
 	  }
 	}
-	
+	fclose(config_fp);
 	
 	int i; 
 	unsigned int set_number = 0;
@@ -334,7 +337,7 @@ int main( int argc, const char* argv[] ){
                                 if(setassocsearch1->dirty){
                                     printf("need to write to level 2\n");
                                     if(setassocsearch1->tag != 0){
-                                        l2cachewrite(l2_assoc, l2_cache_size, l2_root, address, data_ptr);
+                                        l2cachewrite(l2_assoc, l2_cache_size, l2_root, address);
                                         if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
                                     }
                                 }
@@ -465,7 +468,7 @@ int main( int argc, const char* argv[] ){
                             if(current1->dirty){
                                 printf("need to write to level 2\n");
                                 if(current1->tag != 0){
-                                    l2cachewrite(l2_assoc, l2_cache_size, l2_root, address, data_ptr);
+                                    l2cachewrite(l2_assoc, l2_cache_size, l2_root, address);
                                     if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
                                 }
                             }
@@ -629,7 +632,7 @@ int main( int argc, const char* argv[] ){
                                 if(setassocsearch1->dirty){
                                     printf("need to write to level 2\n");
                                     if(setassocsearch1->tag != 0){
-                                        l2cachewrite(l2_assoc, l2_cache_size, l2_root, address, data_ptr);
+                                        l2cachewrite(l2_assoc, l2_cache_size, l2_root, address);
                                         if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
                                     }
                                 }
@@ -676,15 +679,37 @@ int main( int argc, const char* argv[] ){
                 }
             }
         }
-        printf("\n\nl1i hits: %llu l1i misses: %llu\nl1d hits: %llu l1d misses: %llu\nl2 hits: %llu l2 misses: %llu\
-               \nl1i kickouts: %llu, dirty %llu\nl1d kickouts: %llu, dirty %llu\nl2 kickouts: %llu, dirty %llu\
-               \nnumber of references:\nwrite: %llu\nread: %llu\nInstruction: %llu\
-               \nExecution Times:\nInstruction: %llu\nRead: %llu\nWrite: %llu\n",
+    
+    
+        outputcost(l1_cache_size, l1_assoc, l2_cache_size, l2_assoc,
+                   mem_chunk_size, &l1_cache_cost, &l2_cache_cost, &main_cost);
+    
+        strcpy(outputfname, argv[argc-1]);
+        strcat(outputfname, "output");
+        output_fp = fopen(outputfname, "w");
+        fprintf(output_fp, "\n\nMemory System:\nd-cache size: %i ways: %i block size: %i\ni-cache size: %i ways: %i block size: %i\
+               \nl2-cache size: %i ways: %i block size: %i\nMem ready time: %i chunksize: %i chunktime: %i\
+               \n\nExecute time: %llu Total refs: %llu\nInst refs: %llu Data refs: %llu\n\nNumber of Reference Types:\
+               \nRead: %llu\nWrite: %llu\nInst: %llu\nTotal: %llu\n\nTotal cycles per activity:\nRead: %llu\nWrite: %llu\
+               \nInst: %llu\nTotal: %llu\n\nAverage cycles per activity:\nRead: %f Write: %f Inst: %f\
+               \n\nl1i hits: %llu l1i misses: %llu\n\nl1d hits: %llu l1d misses: %llu\n\nl2 hits: %llu l2 misses: %llu\
+               \n\nl1i kickouts: %llu, dirty %llu\n\nl1d kickouts: %llu, dirty %llu\n\nl2 kickouts: %llu, dirty %llu\
+               \n\nnumber of references:\nwrite: %llu\nread: %llu\nInstruction: %llu\
+               \n\nExecution Times:\nInstruction: %llu\nRead: %llu\nWrite: %llu\
+               \n\nl1 cache cost: $%i\nl2 cache cost: $%i Main cost: $%i\nTotal Cost: $%i",
+               l1_cache_size, l1_assoc, L1BLOCKSIZE, l1_cache_size, l1_assoc, L1BLOCKSIZE, l2_cache_size, l2_assoc, L2BLOCKSIZE,
+               MEMREADY, mem_chunk_size, MEMCHUNKTIME, data_ptr->read_cycles + data_ptr->write_cycles + data_ptr->inst_cycles,
+               data_ptr->data_read_refs + data_ptr->data_write_refs + data_ptr->inst_refs, data_ptr->inst_refs, data_ptr->data_read_refs + data_ptr->data_write_refs,
+               data_ptr->data_read_refs, data_ptr->data_write_refs, data_ptr->inst_refs, data_ptr->data_read_refs + data_ptr->data_write_refs + data_ptr->inst_refs,
+               data_ptr->read_cycles, data_ptr->write_cycles, data_ptr->inst_cycles, data_ptr->read_cycles + data_ptr->write_cycles + data_ptr->inst_cycles,
+               (double)data_ptr->read_cycles/(double)data_ptr->data_read_refs, (double)data_ptr->write_cycles/(double)data_ptr->data_write_refs,
+               (double)data_ptr->inst_cycles/(double)data_ptr->inst_refs,
                data_ptr->l1i_hit_count, data_ptr->l1i_miss_count, data_ptr->l1d_hit_count, data_ptr->l1d_miss_count,
                data_ptr->l2_hit_count, data_ptr->l2_miss_count, data_ptr->l1i_kickouts, data_ptr->l1i_dirty_kickouts,
                data_ptr->l1d_kickouts, data_ptr->l1d_dirty_kickouts, data_ptr->l2_kickouts, data_ptr->l2_dirty_kickouts,
                data_ptr->data_write_refs, data_ptr->data_read_refs, data_ptr->inst_refs, data_ptr->inst_cycles,
-               data_ptr->read_cycles, data_ptr->write_cycles);
+               data_ptr->read_cycles, data_ptr->write_cycles, l1_cache_cost, l2_cache_cost, main_cost, l1_cache_cost + l2_cache_cost + main_cost);
+        fclose(output_fp);
         return 0;
 	
 }
@@ -1023,7 +1048,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
 	
 }
 
-void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address, Data * data_ptr){
+void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address){
     Node *writesearch = l2_root;
     int l2_index_bits, num_of_sets;
     
@@ -1051,8 +1076,25 @@ void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long 
 
 }
 
-void outputcost(){
+void outputcost(int l1cachesize, int l1assoc, int l2cachesize, int l2assoc,
+                int memchunksize, int *l1cache, int *l2cache, int *main){
+    *l1cache = 100*(l1cachesize/4096);
+    if (l1assoc > 1) {
+        *l1cache += (l1cachesize/4096)*100*(l1assoc - 1);
+    }
     
+    *l2cache = 50*(l2cachesize/65536);
+    if (l2assoc > 1) {
+        *l2cache += (l2cachesize/65536)*50*(l2assoc - 1);
+    }
+    
+    *main = 50;
+    
+    if(memchunksize > 16){
+        *main += 100*(memchunksize/16);
+    }else{
+        *main = 75;
+    }
 }
 
 
