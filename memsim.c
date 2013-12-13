@@ -221,16 +221,16 @@ int main( int argc, const char* argv[] ){
 	
 	unsigned int references;
 	unsigned int counter = 0; 
-	unsigned int addresscounter = 0;
+	//unsigned int addresscounter = 0;
 	switch(l1_assoc){
 		case 0:
             NEW_ADDRESS_FA:
             while (scanf("%c %llx %d\n", &op, &address, &bytesize) == 3) {
-                addresscounter++;
-                printf("index mask: %#llX\n", indexmask1);
-                printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter - 1);
-                printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
-                       l1_index_bits, tagmask1, address, address & tagmask1);
+                //addresscounter++;
+               // printf("index mask: %#llX\n", indexmask1);
+               // printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter - 1);
+                //printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
+                //       l1_index_bits, tagmask1, address, address & tagmask1);
                 switch (op) {
                     case 'I':
                         data_ptr->inst_refs++;
@@ -246,7 +246,7 @@ int main( int argc, const char* argv[] ){
                 }
 		
                 references = (int)(ceil((address%4 + bytesize)/4.0));
-                printf("refs %u\n",references);
+                //printf("refs %u\n",references);
                 address =  address - (address%4);
                 counter = 0;
 		
@@ -255,10 +255,10 @@ int main( int argc, const char* argv[] ){
                     if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}
                         while(current1 != NULL){
                             if(current1->tag == (address & tagmask1)){
-                                printf("tags match: %#llX %#llX\n", current1->tag, (address & tagmask1));
-                                printf("current address:%#llX\n", address);
+                                //printf("tags match: %#llX %#llX\n", current1->tag, (address & tagmask1));
+                                //printf("current address:%#llX\n", address);
                                 if(current1->valid){
-                                    printf("Cache Hit\n");
+                                    //printf("Cache Hit\n");
                                     switch (op) {
                                         case 'I':
                                             data_ptr->inst_cycles += L1HITTIME;
@@ -274,7 +274,7 @@ int main( int argc, const char* argv[] ){
                                     }
                                     if(op == 'I'){data_ptr->l1i_hit_count++;}else{data_ptr->l1d_hit_count++;}
                                     if(op == 'W'){
-                                        current1->dirty = true; printf("entry marked dirty\n");
+                                        current1->dirty = true; //printf("entry marked dirty\n");
                                         current1->address = address;
                                         current1->tag = address & tagmask1;
                                         current1->valid = true;
@@ -317,7 +317,7 @@ int main( int argc, const char* argv[] ){
                                     }
                                     setassocsearch1 = setassocsearch1->child;
                                 }
-                                printf("Cache Miss\n");
+                                //printf("Cache Miss\n");
                                 switch (op) {
                                     case 'I':
                                         data_ptr->inst_cycles += L1MISSTIME + L1HITTIME;
@@ -333,9 +333,9 @@ int main( int argc, const char* argv[] ){
                                 }
                                 if(op == 'I'){data_ptr->l1i_miss_count++;}else{data_ptr->l1d_miss_count++;}
                                 setassocsearch1->LRU = 0;
-                                printf("%llu\n", setassocsearch1->block_number);
+                               // printf("%llu\n", setassocsearch1->block_number);
                                 if(setassocsearch1->dirty){
-                                    printf("need to write to level 2\n");
+                                    //printf("need to write to level 2\n");
                                     if(setassocsearch1->tag != 0){
                                         l2cachewrite(l2_assoc, l2_cache_size, l2_root, address);
                                         if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
@@ -344,7 +344,7 @@ int main( int argc, const char* argv[] ){
                                 if(setassocsearch1->tag != 0){
                                     if(op == 'I'){data_ptr->l1i_kickouts++;}else{data_ptr->l1d_kickouts++;}
                                 }
-                                printf("Need to return data from lower level memory\n");
+                                //printf("Need to return data from lower level memory\n");
                                 switch (op) {
                                     case 'I':
                                         data_ptr->inst_cycles += L2TRANSFERTIME*(L1BLOCKSIZE/L2BUSWIDTH);
@@ -385,10 +385,10 @@ int main( int argc, const char* argv[] ){
 		case 1:
             NEW_ADDRESS:
             while (scanf("%c %llx %d\n", &op, &address, &bytesize) == 3) {
-                addresscounter++;
-                printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter - 1);
-                printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
-                       l1_index_bits, tagmask1, address, address & tagmask1);
+                //addresscounter++;
+               // printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter - 1);
+                //printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
+                       //l1_index_bits, tagmask1, address, address & tagmask1);
                 switch (op) {
                     case 'I':
                         data_ptr->inst_refs++;
@@ -403,7 +403,7 @@ int main( int argc, const char* argv[] ){
                         break;
                 }
                 references = (int)(ceil((address%4 + bytesize)/4.0));
-                printf("refs %u\n",references);
+                //printf("refs %u\n",references);
                 address =  address - (address%4);
                 counter = 0;
 		
@@ -412,13 +412,13 @@ int main( int argc, const char* argv[] ){
                     if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}
                     while(current1 != NULL){
                         if(current1->block_number == (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2))){
-                            printf("blocks match: %llu %llu\n", current1->block_number,
-                                   (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
-                            printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
-                            printf("current address:%#llX\n", address);
+                            //printf("blocks match: %llu %llu\n", current1->block_number,
+                             //      (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
+                           // printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
+                           // printf("current address:%#llX\n", address);
                             if(current1->tag == (address & tagmask1)){
                                 if(current1->valid){
-                                    printf("Cache Hit\n");
+                                    //printf("Cache Hit\n");
                                     switch (op) {
                                         case 'I':
                                             data_ptr->inst_cycles += L1HITTIME;
@@ -434,7 +434,7 @@ int main( int argc, const char* argv[] ){
                                     }
                                     if(op == 'I'){data_ptr->l1i_hit_count++;}else{data_ptr->l1d_hit_count++;}
                                     if(op == 'W'){
-                                        current1->dirty = true; printf("entry marked dirty\n");
+                                        current1->dirty = true; //printf("entry marked dirty\n");
                                         current1->address = address;
                                         current1->tag = address & tagmask1;
                                         current1->valid = true;
@@ -450,7 +450,7 @@ int main( int argc, const char* argv[] ){
                                     }
                                 }
                             }
-                            printf("Cache Miss\n");
+                            //printf("Cache Miss\n");
                             switch (op) {
                                 case 'I':
                                     data_ptr->inst_cycles += L1MISSTIME + L1HITTIME;
@@ -466,7 +466,7 @@ int main( int argc, const char* argv[] ){
                             }
                             if(op == 'I'){data_ptr->l1i_miss_count++;}else{data_ptr->l1d_miss_count++;}
                             if(current1->dirty){
-                                printf("need to write to level 2\n");
+                                //printf("need to write to level 2\n");
                                 if(current1->tag != 0){
                                     l2cachewrite(l2_assoc, l2_cache_size, l2_root, address);
                                     if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
@@ -475,7 +475,7 @@ int main( int argc, const char* argv[] ){
                             if(current1->tag != 0){
                                 if(op == 'I'){data_ptr->l1i_kickouts++;}else{data_ptr->l1d_kickouts++;}
                             }
-                            printf("Need to return data from lower level memory\n");
+                            //printf("Need to return data from lower level memory\n");
                             switch (op) {
                                 case 'I':
                                     data_ptr->inst_cycles += L2TRANSFERTIME*(L1BLOCKSIZE/L2BUSWIDTH);
@@ -508,10 +508,10 @@ int main( int argc, const char* argv[] ){
         default:
             NEW_ADDRESS_SA:
             while (scanf("%c %llx %d\n", &op, &address, &bytesize) == 3) {
-                addresscounter++;
-                printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter - 1);
-                printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
-                       l1_index_bits, tagmask1, address, address & tagmask1);
+                //addresscounter++;
+                //printf("\nNEW ADRESS////////////////////////////////////%u\n", addresscounter - 1);
+                //printf("index bits: %i tag mask 1: %#llX address: %#llX address after mask: %#llX\n",
+                      // l1_index_bits, tagmask1, address, address & tagmask1);
                 switch (op) {
                     case 'I':
                         data_ptr->inst_refs++;
@@ -526,7 +526,7 @@ int main( int argc, const char* argv[] ){
                         break;
                 }
                 references = (int)(ceil((address%4 + bytesize)/4.0));
-                printf("refs %u\n",references);
+                //printf("refs %u\n",references);
                 address =  address - (address%4);
                 counter = 0;
                 NEW_WORD_SA:
@@ -534,13 +534,13 @@ int main( int argc, const char* argv[] ){
                     if(op == 'I'){current1 = l1i_root;}else{current1 = l1d_root;}
                     while(current1 != NULL){
                         if(current1->set_number == (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2))){
-                            printf("sets match: %i %llu\n", current1->set_number,
-                                   (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
-                            printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
-                            printf("current address:%#llX\n", address);
+                            //printf("sets match: %i %llu\n", current1->set_number,
+                             //      (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2)));
+                            //printf("current tag:%#llX address tag:%#llX\n", current1->tag, address & tagmask1);
+                            //printf("current address:%#llX\n", address);
                             if(current1->tag == (address & tagmask1)){
                                 if(current1->valid){
-                                    printf("Cache Hit\n");
+                                    //printf("Cache Hit\n");
                                     switch (op) {
                                         case 'I':
                                             data_ptr->inst_cycles += L1HITTIME + L1MISSTIME;
@@ -556,7 +556,7 @@ int main( int argc, const char* argv[] ){
                                     }
                                     if(op == 'I'){data_ptr->l1i_hit_count++;}else{data_ptr->l1d_hit_count++;}
                                     if(op == 'W'){
-                                        current1->dirty = true; printf("entry marked dirty\n");
+                                        current1->dirty = true; //printf("entry marked dirty\n");
                                         current1->address = address;
                                         current1->tag = address & tagmask1;
                                         current1->valid = true;
@@ -586,7 +586,7 @@ int main( int argc, const char* argv[] ){
                             }
 					
                             if((current1->block_number%l1_assoc) == (l1_assoc - 1)){
-                                printf("Cache Miss\n");
+                                //printf("Cache Miss\n");
                                 switch (op) {
                                     case 'I':
                                         data_ptr->inst_cycles += L1MISSTIME + L1HITTIME;
@@ -613,7 +613,7 @@ int main( int argc, const char* argv[] ){
                                     if(setassocsearch1->set_number == (address & indexmask1) >> (int)(log(L1BLOCKSIZE)/log(2))){
                                         if(setassocsearch1->LRU > (unsigned int)highest_LRU){
                                             highest_LRU = setassocsearch1->LRU;
-                                            printf("highest: %i, current: %i\n", highest_LRU, setassocsearch1->LRU);
+                                            //printf("highest: %i, current: %i\n", highest_LRU, setassocsearch1->LRU);
                                         }
                                     }
                                     setassocsearch1 = setassocsearch1->child;
@@ -628,9 +628,9 @@ int main( int argc, const char* argv[] ){
                                     setassocsearch1 = setassocsearch1->child;
                                 }
                                 setassocsearch1->LRU = 0;
-                                printf("%llu\n", setassocsearch1->block_number);
+                                //printf("%llu\n", setassocsearch1->block_number);
                                 if(setassocsearch1->dirty){
-                                    printf("need to write to level 2\n");
+                                    //printf("need to write to level 2\n");
                                     if(setassocsearch1->tag != 0){
                                         l2cachewrite(l2_assoc, l2_cache_size, l2_root, address);
                                         if(op == 'I'){data_ptr->l1i_dirty_kickouts++;}else{data_ptr->l1d_dirty_kickouts++;}
@@ -639,7 +639,7 @@ int main( int argc, const char* argv[] ){
                                 if(setassocsearch1->tag != 0){
                                     if(op == 'I'){data_ptr->l1i_kickouts++;}else{data_ptr->l1d_kickouts++;}
                                 }
-                                printf("Need to return data from lower level memory\n");
+                                //printf("Need to return data from lower level memory\n");
                                 switch (op) {
                                     case 'I':
                                         data_ptr->inst_cycles += L2TRANSFERTIME*(L1BLOCKSIZE/L2BUSWIDTH);
@@ -716,7 +716,7 @@ int main( int argc, const char* argv[] ){
 
 void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long int address,
 			 char op, Data * data_ptr, int mem_chunk_size){
-	printf("	l2 called\n");
+	//printf("	l2 called\n");
 	Node *current2, *setassocsearch2;
 	int l2_index_bits, num_of_sets;
 	int highest_LRU = 0;
@@ -741,10 +741,10 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
 			current2 = l2_root;	
 			while(current2 != NULL){
 					if(current2->tag == (address & tagmask2)){
-						printf("	tags match: %#llX %#llX\n", current2->tag, (address & tagmask2));
-						printf("	current address:%#llX\n", address);
+						//printf("	tags match: %#llX %#llX\n", current2->tag, (address & tagmask2));
+						//printf("	current address:%#llX\n", address);
 						if(current2->valid){
-							printf("	Cache Hit\n");
+							//printf("	Cache Hit\n");
                             switch (op) {
                                 case 'I':
                                     data_ptr->inst_cycles += L2HITTIME;
@@ -760,7 +760,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                             }
                             data_ptr->l2_hit_count++;
 							if(op == 'W'){
-								current2->dirty = true; printf("	entry marked dirty\n");
+								current2->dirty = true; //printf("	entry marked dirty\n");
 								current2->address = address;
 								current2->tag = address & tagmask2;
 								current2->valid = true;
@@ -792,7 +792,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                             }
                             setassocsearch2 = setassocsearch2->child;
                         }
-                        printf("	Cache Miss\n");
+                        //printf("	Cache Miss\n");
                         switch (op) {
                             case 'I':
                                 data_ptr->inst_cycles += L2MISSTIME + L2HITTIME;
@@ -808,14 +808,14 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                         }
                         data_ptr->l2_miss_count++;
                         setassocsearch2->LRU = 0;
-                        printf("	%llu\n", setassocsearch2->block_number);
+                        //printf("	%llu\n", setassocsearch2->block_number);
                         if(setassocsearch2->dirty){
-                            printf("	need to write to main\n");
+                            //printf("	need to write to main\n");
                             if(current2->tag != 0){
                                 data_ptr->l2_dirty_kickouts++;
                             }
                         }
-                        printf("	Need to return data from main\n");
+                        //printf("	Need to return data from main\n");
                         switch (op) {
                             case 'I':
                                 data_ptr->inst_cycles += MEMSENDADDR + MEMREADY + (MEMCHUNKTIME*L2BLOCKSIZE/mem_chunk_size);
@@ -844,13 +844,13 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                 current2 = l2_root;
                 while(current2 != NULL){
                     if(current2->block_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
-                        printf("	blocks match: %llu %llu\n", current2->block_number,
-                               (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2)));
-                        printf("	current tag:%#llX address tag:%#llX\n", current2->tag, address & tagmask2);
-                        printf("	current address:%#llX\n", address);
+                        //printf("	blocks match: %llu %llu\n", current2->block_number,
+                         //      (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2)));
+                        //printf("	current tag:%#llX address tag:%#llX\n", current2->tag, address & tagmask2);
+                        //printf("	current address:%#llX\n", address);
                         if(current2->tag == (address & tagmask2)){
                             if(current2->valid){
-                                printf("	Cache Hit\n");
+                                //printf("	Cache Hit\n");
                                 switch (op) {
                                     case 'I':
                                         data_ptr->inst_cycles += L2HITTIME;
@@ -866,7 +866,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                                 }
                                 data_ptr->l2_hit_count++;
                                 if(op == 'W'){
-                                    current2->dirty = true; printf("	entry marked dirty\n");
+                                    current2->dirty = true; //printf("	entry marked dirty\n");
                                     current2->address = address;
                                     current2->tag = address & tagmask2;
                                     current2->valid = true;
@@ -876,7 +876,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                                 break;
                             }
                         }
-                        printf("	Cache Miss\n");
+                        //printf("	Cache Miss\n");
                         switch (op) {
                             case 'I':
                                 data_ptr->inst_cycles += L2MISSTIME + L2HITTIME;
@@ -892,13 +892,13 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                         }
                         data_ptr->l2_miss_count++;
                         if(current2->dirty){
-                            printf("	need to write to main\n");
+                            //printf("	need to write to main\n");
                             if(current2->tag != 0){
                                 data_ptr->l2_dirty_kickouts++;
                             }
                         }
                         if(current2->tag != 0){data_ptr->l2_kickouts++;}
-                        printf("	Need to return data from main memory\n");
+                        //printf("	Need to return data from main memory\n");
                         switch (op) {
                             case 'I':
                                 data_ptr->inst_cycles += MEMSENDADDR + MEMREADY + (MEMCHUNKTIME*L2BLOCKSIZE/mem_chunk_size);
@@ -927,13 +927,13 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                 current2 = l2_root;
                 while(current2 != NULL){
                     if(current2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
-                        printf("	sets match: %i %llu\n", current2->set_number,
-                               (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2)));
-                        printf("	current tag:%#llX address tag:%#llX\n", current2->tag, address & tagmask2);
-                        printf("	current address:%#llX\n", address);
+                        //printf("	sets match: %i %llu\n", current2->set_number,
+                               //(address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2)));
+                        //printf("	current tag:%#llX address tag:%#llX\n", current2->tag, address & tagmask2);
+                        //printf("	current address:%#llX\n", address);
                         if(current2->tag == (address & tagmask2)){
                             if(current2->valid){
-                                printf("	Cache Hit\n");
+                                //printf("	Cache Hit\n");
                                 switch (op) {
                                     case 'I':
                                         data_ptr->inst_cycles += L2HITTIME;
@@ -949,7 +949,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                                 }
                                 data_ptr->l2_hit_count++;
                                 if(op == 'W'){
-                                    current2->dirty = true; printf("	entry marked dirty\n");
+                                    current2->dirty = true; //printf("	entry marked dirty\n");
                                     current2->address = address;
                                     current2->tag = address & tagmask2;
                                     current2->valid = true;
@@ -968,7 +968,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                             }
                         }
                         if((current2->block_number%l2_assoc) == (l2_assoc - 1)){
-                            printf("	Cache Miss\n");
+                            //printf("	Cache Miss\n");
                             switch (op) {
                                 case 'I':
                                     data_ptr->inst_cycles += L2MISSTIME + L2HITTIME;
@@ -995,7 +995,7 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                                 if(setassocsearch2->set_number == (address & indexmask2) >> (int)(log(L2BLOCKSIZE)/log(2))){
 									if(setassocsearch2->LRU > (unsigned int)highest_LRU){
 										highest_LRU = setassocsearch2->LRU;
-										printf("	highest: %i, current: %i\n", highest_LRU, setassocsearch2->LRU);
+										//printf("	highest: %i, current: %i\n", highest_LRU, setassocsearch2->LRU);
 									}
 								}
                                 setassocsearch2 = setassocsearch2->child;
@@ -1010,15 +1010,15 @@ void l2cache(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long long 
                                 setassocsearch2 = setassocsearch2->child;
                             }
                             setassocsearch2->LRU = 0;
-                            printf("	%llu\n", setassocsearch2->block_number);
+                            //printf("	%llu\n", setassocsearch2->block_number);
                             if(setassocsearch2->dirty){
-                                printf("	need to write to main\n");
+                                //printf("	need to write to main\n");
                                 if(current2->tag != 0){
                                     data_ptr->l2_dirty_kickouts++;
                                 }
                             }
                             if(current2->tag != 0){data_ptr->l2_kickouts++;}
-                            printf("	Need to return data from lower level memory\n");
+                            //printf("	Need to return data from lower level memory\n");
                             switch (op) {
                                 case 'I':
                                     data_ptr->inst_cycles += MEMSENDADDR + MEMREADY + (MEMCHUNKTIME*L2BLOCKSIZE/mem_chunk_size);
@@ -1067,7 +1067,7 @@ void l2cachewrite(int l2_assoc, int l2_cache_size, Node *l2_root, unsigned long 
     
     while (writesearch != NULL) {
         if (writesearch->tag == (address & tagmask2) ) {
-            printf("block marked dirty in 2\n");
+            //printf("block marked dirty in 2\n");
             writesearch->dirty = true;
             break;
         }
