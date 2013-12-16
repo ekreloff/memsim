@@ -1,0 +1,51 @@
+
+
+Memory System:
+d-cache size: 8192 ways: 0 block size: 32
+i-cache size: 8192 ways: 0 block size: 32               
+l2-cache size: 65536 ways: 0 block size: 64
+Mem ready time: 50 chunksize: 16 chunktime: 20               
+
+Execute time: 10028074 Total refs: 5000000
+Inst refs: 3771144 Data refs: 1228856
+
+Number of Reference Types:               
+Read: 810911
+Write: 417945
+Inst: 3771144
+Total: 5000000
+
+Total cycles per activity:
+Read: 2075164
+Write: 1012353               
+Inst: 6940557
+Total: 10028074
+
+Average cycles per activity:
+Read: 2.559053 Write: 2.422216 Inst: 1.840438               
+
+l1i hits: 6615289 l1i misses: 4022
+
+l1d hits: 2066969 l1d misses: 17999
+
+l2 hits: 15518 l2 misses: 6503               
+
+l1i kickouts: 3766, dirty 0
+
+l1d kickouts: 17743, dirty 4564
+
+l2 kickouts: 5135, dirty 1378               
+
+number of references:
+write: 417945
+read: 810911
+Instruction: 3771144               
+
+Execution Times:
+Instruction: 6940557
+Read: 2075164
+Write: 1012353               
+
+l1 cache cost: $200
+l2 cache cost: $50 Main cost: $75
+Total Cost: $325
